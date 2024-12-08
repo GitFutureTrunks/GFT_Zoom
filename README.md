@@ -4,4 +4,4 @@
 
 ## Simply drag and drop into your qbox_smallresources (Rename folder to qbox_zoom)
 
-# Enjoy! :)
+# You may PR and addon to this enjoy! :)
