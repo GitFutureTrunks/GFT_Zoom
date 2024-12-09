@@ -1,43 +1,50 @@
 local zoomed = false
-local zoomFOV = 30.0 -- Zoom level (Field of View DO NOT TOUCH)
-local normalFOV = 50.0 -- Default FOV (I would suggest to only edit if you have default views set default value is 70)
-local zoomSpeed = 5.0 -- Speed of FOV transition (This one is okay to touch but DO NOT DO TOO MUCH LOL)
+local zoomFOV = 30.0
+local normalFOV = 50.0
+local zoomSpeed = 2.0
 local camera = nil
+
+function interpolateFOV(currentFOV, targetFOV, speed)
+    return currentFOV + (targetFOV - currentFOV) / speed
+end
+
+RegisterKeyMapping("holdZoom", "Hold to Zoom", "keyboard", "Z")
 
 CreateThread(function()
     while true do
         Wait(0)
+        local isZoomKeyHeld = IsControlPressed(0, 20) -- Z key (Control ID 20)
         local targetFOV
 
-        if IsControlPressed(0, 20) then -- This is Z key (control ID 20)
+        if isZoomKeyHeld then
             if not zoomed then
                 zoomed = true
-
-                -- This creates and activates a new camera
                 if not camera then
                     camera = CreateCam("DEFAULT_SCRIPTED_CAMERA", true)
+                    SetCamActive(camera, true)
+                    RenderScriptCams(true, false, 0, true, true)
                 end
                 SetCamCoord(camera, GetGameplayCamCoord())
                 SetCamRot(camera, GetGameplayCamRot(2), 2)
-                SetCamActive(camera, true)
-                RenderScriptCams(true, false, 0, true, true)
             end
-            targetFOV = zoomFOV -- Sets target FOV to zoom level
+            targetFOV = zoomFOV
         else
             if zoomed then
-                zoomed = false -- Mark zoom as inactive
+                zoomed = false
             end
-            targetFOV = normalFOV -- Sets target FOV to normal level
+            targetFOV = normalFOV
         end
 
-        -- This keeps the zoom state smooth when active
         if camera then
             local currentFOV = GetCamFov(camera)
-            local newFOV = currentFOV + (targetFOV - currentFOV) / zoomSpeed
+            local newFOV = interpolateFOV(currentFOV, targetFOV, zoomSpeed)
             SetCamFov(camera, newFOV)
+            local gameplayCamCoords = GetGameplayCamCoord()
+            local gameplayCamRot = GetGameplayCamRot(2)
+            SetCamCoord(camera, gameplayCamCoords)
+            SetCamRot(camera, gameplayCamRot, 2)
 
-            -- This will restore the camera back to normal for a smooth zoom out
-            if not zoomed and math.abs(newFOV - normalFOV) < 0.1 then
+            if not zoomed and math.abs(newFOV - normalFOV) < 1.0 then
                 RenderScriptCams(false, false, 0, true, true)
                 DestroyCam(camera, false)
                 camera = nil
